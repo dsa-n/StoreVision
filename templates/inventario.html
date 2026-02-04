@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="inventario-container">
+    <h1>📦 Gestión de Inventario - StoreVision</h1>
+    
+    <div id="contenidoInventario" style="display: none;">
+        <!-- Alertas de Inventario -->
+        <div id="seccionAlertas" class="alertas-section">
+            <h3>⚠️ Alertas de Inventario</h3>
+            <div id="listaAlertas"></div>
+        </div>
+
+        <!-- Búsqueda y Filtros -->
+        <div class="filtros-inventario">
+            <input type="text" id="buscarProducto" placeholder="Buscar producto..." onkeyup="filtrarProductos()">
+            <select id="filtroCategoria" onchange="filtrarProductos()">
+                <option value="">Todas las categorías</option>
+                <option value="Lácteos">Lácteos</option>
+                <option value="Granos">Granos</option>
+                <option value="Enlatados">Enlatados</option>
+                <option value="Aseo">Aseo</option>
+                <option value="Bebidas">Bebidas</option>
+                <option value="Snacks">Snacks</option>
+            </select>
+            <button onclick="cargarInventario()" class="btn-primary">Actualizar</button>
+            <button onclick="mostrarFormularioProducto()" class="btn-success" id="btnNuevoProducto">+ Nuevo Producto</button>
+        </div>
+
+        <!-- Lista de Productos -->
+        <div class="inventario-lista">
+            <h3>Productos en Inventario</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Precio Venta</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaInventario">
+                    <!-- Los productos se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Formulario de Movimiento de Inventario -->
+        <div class="movimiento-form">
+            <h3>Registrar Movimiento de Inventario</h3>
+            <form id="formMovimiento">
+                <div class="form-group">
+                    <label for="productoMovimiento">Producto:</label>
+                    <select id="productoMovimiento" required>
+                        <option value="">Seleccionar producto</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tipoMovimiento">Tipo de Movimiento:</label>
+                    <select id="tipoMovimiento" required onchange="actualizarInterfazMovimiento()">
+                        <option value="">Seleccionar tipo</option>
+                        <option value="entrada">Entrada (Aumentar stock)</option>
+                        <option value="salida">Salida (Reducir stock)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="cantidadMovimiento">Cantidad:</label>
+                    <input type="number" id="cantidadMovimiento" min="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="motivoMovimiento">Motivo:</label>
+                    <input type="text" id="motivoMovimiento" placeholder="Ej: Compra, Ajuste, Devolución..." required>
+                </div>
+                
+                <div id="infoStock" style="display: none; background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                    <strong>Información actual:</strong>
+                    <span id="stockActualInfo"></span>
+                    <span id="stockNuevoInfo"></span>
+                </div>
+                
+                <button type="submit" class="btn-primary">Registrar Movimiento</button>
+            </form>
+        </div>
+
+        <!-- Formulario para agregar nuevo producto -->
+        <div id="formularioProducto" class="producto-form" style="display: none;">
+            <h3>Agregar Nuevo Producto</h3>
+            <form id="formNuevoProducto">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="codigoProducto">Código:</label>
+                        <input type="text" id="codigoProducto" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreProducto">Nombre:</label>
+                        <input type="text" id="nombreProducto" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="categoriaProducto">Categoría:</label>
+                        <select id="categoriaProducto" required>
+                            <option value="">Seleccionar categoría</option>
+                            <option value="Lácteos">Lácteos</option>
+                            <option value="Granos">Granos</option>
+                            <option value="Enlatados">Enlatados</option>
+                            <option value="Aseo">Aseo</option>
+                            <option value="Bebidas">Bebidas</option>
+                            <option value="Snacks">Snacks</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="precioProducto">Precio Venta:</label>
+                        <input type="number" id="precioProducto" min="0" step="0.01" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="costoProducto">Costo:</label>
+                        <input type="number" id="costoProducto" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="stockMinimoProducto">Stock Mínimo:</label>
+                        <input type="number" id="stockMinimoProducto" min="1" value="5" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descripcionProducto">Descripción:</label>
+                    <textarea id="descripcionProducto" rows="3"></textarea>
+                </div>
+                
+                <div class="form-buttons">
+                    <button type="submit" class="btn-primary">Guardar Producto</button>
+                    <button type="button" onclick="ocultarFormularioProducto()" class="btn-secondary">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Historial de Movimientos -->
+        <div class="historial-movimientos">
+            <h3>Historial de Movimientos</h3>
+            <div class="filtros-historial">
+                <input type="date" id="fechaInicioHistorial">
+                <input type="date" id="fechaFinHistorial">
+                <select id="productoHistorial">
+                    <option value="">Todos los productos</option>
+                </select>
+                <button onclick="cargarHistorial()" class="btn-primary">Filtrar</button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Stock Anterior</th>
+                        <th>Stock Nuevo</th>
+                        <th>Motivo</th>
+                        <th>Usuario</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaHistorial">
+                    <!-- El historial se cargará aquí -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.inventario-container {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.alertas-section {
+    margin-bottom: 2rem;
+}
+
+.filtros-inventario {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto auto;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: end;
+}
+
+.filtros-inventario input,
+.filtros-inventario select {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.filtros-historial {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr auto;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: end;
+}
+
+.filtros-historial input,
+.filtros-historial select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.estado-stock {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.estado-normal {
+    background-color: #d5f4e6;
+    color: #1d8348;
+}
+
+.estado-bajo {
+    background-color: #fdebd0;
+    color: #b7950b;
+}
+
+.estado-critico {
+    background-color: #fadbd8;
+    color: #c0392b;
+}
+
+.movimiento-form, .producto-form {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin: 2rem 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+}
+
+.btn-success {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-success:hover {
+    background-color: #219653;
+}
+</style>
+
+<script>
+let productosInventario = [];
+let movimientosHistorial = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (usuario && sessionId) {
+        document.getElementById('contenidoInventario').style.display = 'block';
+        cargarDatosInventario();
+    }
+});
+
+async function cargarDatosInventario() {
+    await cargarAlertasInventario();
+    await cargarInventario();
+    await cargarProductosParaMovimientos();
+    await cargarHistorial();
+}
+
+async function cargarAlertasInventario() {
+    try {
+        const response = await fetch('/api/inventario/alertas', {
+            headers: { 'session-id': sessionId }
+        });
+        
+        let alertas = [];
+        if (response.ok) {
+            alertas = await response.json();
+        }
+        
+        const listaAlertas = document.getElementById('listaAlertas');
+        
+        if (alertas.length === 0) {
+            listaAlertas.innerHTML = '<div class="alert alert-success">✅ No hay alertas de inventario</div>';
+            return;
+        }
+        
+        listaAlertas.innerHTML = '';
+        alertas.forEach(alerta => {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-warning';
+            alertDiv.innerHTML = `
+                <strong>${alerta.nombre}</strong> - 
+                Stock actual: <strong>${alerta.stock_actual}</strong> | 
+                Stock mínimo: ${alerta.stock_minimo} |
+                Diferencia: <strong>${alerta.diferencia} unidades</strong>
+            `;
+            listaAlertas.appendChild(alertDiv);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando alertas:', error);
+    }
+}
+
+async function cargarInventario() {
+    try {
+        const response = await fetch('/api/inventario/productos', {
+            headers: { 'session-id': sessionId }
+        });
+        
+        if (response.ok) {
+            productosInventario = await response.json();
+            actualizarTablaInventario();
+        }
+        
+    } catch (error) {
+        console.error('Error cargando inventario:', error);
+    }
+}
+
+function actualizarTablaInventario() {
+    const tabla = document.getElementById('tablaInventario');
+    const busqueda = document.getElementById('buscarProducto').value.toLowerCase();
+    const categoria = document.getElementById('filtroCategoria').value;
+    
+    tabla.innerHTML = '';
+    
+    const productosFiltrados = productosInventario.filter(producto => {
+        const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda) || 
+                               producto.codigo.toLowerCase().includes(busqueda);
+        const coincideCategoria = !categoria || producto.categoria === categoria;
+        return coincideBusqueda && coincideCategoria;
+    });
+    
+    productosFiltrados.forEach(producto => {
+        const fila = document.createElement('tr');
+        
+        // Determinar estado del stock
+        let estado = 'normal';
+        let estadoTexto = 'Normal';
+        if (producto.stock_actual <= producto.stock_minimo) {
+            estado = 'bajo';
+            estadoTexto = 'Bajo';
+        }
+        if (producto.stock_actual === 0) {
+            estado = 'critico';
+            estadoTexto = 'Crítico';
+        }
+        
+        fila.innerHTML = `
+            <td>${producto.codigo}</td>
+            <td>${producto.nombre}</td>
+            <td>${producto.categoria}</td>
+            <td>${producto.stock_actual}</td>
+            <td>${producto.stock_minimo}</td>
+            <td>$${producto.precio_venta.toLocaleString()}</td>
+            <td><span class="estado-stock estado-${estado}">${estadoTexto}</span></td>
+            <td>
+                <button onclick="seleccionarParaMovimiento(${producto.id})" class="btn-primary">Movimiento</button>
+            </td>
+        `;
+        tabla.appendChild(fila);
+    });
+}
+
+function filtrarProductos() {
+    actualizarTablaInventario();
+}
+
+async function cargarProductosParaMovimientos() {
+    const selectProducto = document.getElementById('productoMovimiento');
+    const selectHistorial = document.getElementById('productoHistorial');
+    
+    selectProducto.innerHTML = '<option value="">Seleccionar producto</option>';
+    selectHistorial.innerHTML = '<option value="">Todos los productos</option>';
+    
+    productosInventario.forEach(producto => {
+        // Para movimientos
+        const optionMov = document.createElement('option');
+        optionMov.value = producto.id;
+        optionMov.textContent = `${producto.codigo} - ${producto.nombre} (Stock: ${producto.stock_actual})`;
+        optionMov.dataset.stock = producto.stock_actual;
+        selectProducto.appendChild(optionMov);
+        
+        // Para historial
+        const optionHist = document.createElement('option');
+        optionHist.value = producto.id;
+        optionHist.textContent = `${producto.codigo} - ${producto.nombre}`;
+        selectHistorial.appendChild(optionHist);
+    });
+}
+
+function mostrarFormularioProducto() {
+    document.getElementById('formularioProducto').style.display = 'block';
+    document.getElementById('btnNuevoProducto').style.display = 'none';
+}
+
+function ocultarFormularioProducto() {
+    document.getElementById('formularioProducto').style.display = 'none';
+    document.getElementById('btnNuevoProducto').style.display = 'block';
+    document.getElementById('formNuevoProducto').reset();
+}
+
+// Formulario para nuevo producto
+document.getElementById('formNuevoProducto').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const nuevoProducto = {
+        codigo: document.getElementById('codigoProducto').value,
+        nombre: document.getElementById('nombreProducto').value,
+        categoria: document.getElementById('categoriaProducto').value,
+        precio_venta: parseFloat(document.getElementById('precioProducto').value),
+        costo: parseFloat(document.getElementById('costoProducto').value),
+        stock_actual: 0,
+        stock_minimo: parseInt(document.getElementById('stockMinimoProducto').value),
+        descripcion: document.getElementById('descripcionProducto').value
+    };
+    
+    try {
+        const response = await fetch('/api/inventario/productos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'session-id': sessionId
+            },
+            body: JSON.stringify(nuevoProducto)
+        });
+        
+        if (response.ok) {
+            mostrarMensaje('Producto agregado exitosamente', 'success');
+            ocultarFormularioProducto();
+            await cargarInventario();
+            await cargarProductosParaMovimientos();
+        } else {
+            const error = await response.json();
+            mostrarMensaje(error.detail || 'Error agregando producto', 'error');
+        }
+    } catch (error) {
+        mostrarMensaje('Error de conexión', 'error');
+    }
+});
+
+// El resto de las funciones se mantienen igual...
+function seleccionarParaMovimiento(productoId) {
+    document.getElementById('productoMovimiento').value = productoId;
+    actualizarInterfazMovimiento();
+    document.getElementById('formMovimiento').scrollIntoView({ behavior: 'smooth' });
+}
+
+function actualizarInterfazMovimiento() {
+    const productoId = document.getElementById('productoMovimiento').value;
+    const tipoMovimiento = document.getElementById('tipoMovimiento').value;
+    const infoStock = document.getElementById('infoStock');
+    
+    if (productoId && tipoMovimiento) {
+        const producto = productosInventario.find(p => p.id == productoId);
+        const cantidad = parseInt(document.getElementById('cantidadMovimiento').value) || 0;
+        
+        let stockNuevo = producto.stock_actual;
+        if (tipoMovimiento === 'entrada') {
+            stockNuevo += cantidad;
+        } else if (tipoMovimiento === 'salida') {
+            stockNuevo -= cantidad;
+        }
+        
+        document.getElementById('stockActualInfo').textContent = `Stock actual: ${producto.stock_actual}`;
+        document.getElementById('stockNuevoInfo').textContent = ` | Stock nuevo: ${stockNuevo}`;
+        infoStock.style.display = 'block';
+    } else {
+        infoStock.style.display = 'none';
+    }
+}
+
+document.getElementById('formMovimiento').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const productoId = document.getElementById('productoMovimiento').value;
+    const tipoMovimiento = document.getElementById('tipoMovimiento').value;
+    const cantidad = document.getElementById('cantidadMovimiento').value;
+    const motivo = document.getElementById('motivoMovimiento').value;
+    
+    if (!productoId || !tipoMovimiento || !cantidad || !motivo) {
+        alert('Complete todos los campos obligatorios');
+        return;
+    }
+    
+    const datosMovimiento = {
+        producto_id: parseInt(productoId),
+        tipo_movimiento: tipoMovimiento,
+        cantidad: parseInt(cantidad),
+        motivo: motivo
+    };
+    
+    try {
+        const response = await fetch('/api/inventario/movimientos', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'session-id': sessionId
+            },
+            body: JSON.stringify(datosMovimiento)
+        });
+        
+        if (response.ok) {
+            mostrarMensaje('Movimiento registrado exitosamente', 'success');
+            document.getElementById('formMovimiento').reset();
+            document.getElementById('infoStock').style.display = 'none';
+            
+            // Recargar datos
+            await cargarInventario();
+            await cargarAlertasInventario();
+            await cargarProductosParaMovimientos();
+            await cargarHistorial();
+        } else {
+            const error = await response.json();
+            mostrarMensaje(error.detail || 'Error registrando movimiento', 'error');
+        }
+    } catch (error) {
+        mostrarMensaje('Error de conexión', 'error');
+    }
+});
+
+async function cargarHistorial() {
+    try {
+        const fechaInicio = document.getElementById('fechaInicioHistorial').value;
+        const fechaFin = document.getElementById('fechaFinHistorial').value;
+        const productoId = document.getElementById('productoHistorial').value;
+        
+        let url = '/api/inventario/historial?';
+        if (fechaInicio) url += `fecha_inicio=${fechaInicio}&`;
+        if (fechaFin) url += `fecha_fin=${fechaFin}&`;
+        if (productoId) url += `producto_id=${productoId}`;
+        
+        const response = await fetch(url, {
+            headers: { 'session-id': sessionId }
+        });
+        
+        if (response.ok) {
+            movimientosHistorial = await response.json();
+            actualizarTablaHistorial();
+        }
+        
+    } catch (error) {
+        console.error('Error cargando historial:', error);
+    }
+}
+
+function actualizarTablaHistorial() {
+    const tabla = document.getElementById('tablaHistorial');
+    tabla.innerHTML = '';
+    
+    movimientosHistorial.forEach(movimiento => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${new Date(movimiento.fecha_movimiento).toLocaleString()}</td>
+            <td>${movimiento.producto.nombre}</td>
+            <td><span class="estado-stock ${movimiento.tipo_movimiento === 'entrada' ? 'estado-normal' : 'estado-critico'}">${movimiento.tipo_movimiento}</span></td>
+            <td>${movimiento.cantidad}</td>
+            <td>${movimiento.stock_anterior}</td>
+            <td>${movimiento.stock_nuevo}</td>
+            <td>${movimiento.motivo}</td>
+            <td>${movimiento.usuario.nombre}</td>
+        `;
+        tabla.appendChild(fila);
+    });
+}
+</script>
+{% endblock %}

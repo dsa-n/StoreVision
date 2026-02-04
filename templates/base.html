@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoreVision - Sistema de Gestión</title>
+    <link href="/static/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <h2>🏪 StoreVision</h2>
+        </div>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Dashboard</a>
+            <a href="/ventas" class="nav-link">Ventas</a>
+            <a href="/inventario" class="nav-link">Inventario</a>
+            <a href="/reportes" class="nav-link">Reportes</a>
+        </div>
+        <div class="nav-user" id="userInfo">
+            <span id="userName">No autenticado</span>
+            <button onclick="logout()" class="btn-logout">Cerrar Sesión</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

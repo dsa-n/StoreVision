@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="ventas-container">
+    <h1>🏪 Módulo de Ventas - StoreVision</h1>
+    
+    <div id="contenidoVentas" style="display: none;">
+        <!-- Formulario de Nueva Venta -->
+        <div class="ventas-form">
+            <h3>Nueva Venta</h3>
+            <form id="formVenta">
+                <div class="form-group">
+                    <h4>Productos</h4>
+                    <div id="itemsVenta">
+                        <div class="item-venta">
+                            <select class="producto-select" required onchange="actualizarPrecio(this)">
+                                <option value="">Seleccionar producto</option>
+                            </select>
+                            <input type="number" class="cantidad" placeholder="Cantidad" min="1" value="1" required onchange="calcularItem(this)" oninput="calcularItem(this)">
+                            <span class="precio-unitario">$0.00</span>
+                            <span class="subtotal">$0.00</span>
+                            <button type="button" onclick="eliminarItem(this)" class="btn-danger">✕</button>
+                        </div>
+                    </div>
+                    <button type="button" onclick="agregarItem()" class="btn-secondary">+ Agregar Producto</button>
+                </div>
+                
+                <div class="resumen-venta">
+                    <h4>Resumen de Venta</h4>
+                    <div class="resumen-detalle">
+                        <div>Subtotal: $<span id="subtotalVenta">0.00</span></div>
+                        <div>Total: $<span id="totalVenta">0.00</span></div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-primary">Confirmar Venta</button>
+            </form>
+        </div>
+
+        <!-- Lista de Ventas Recientes -->
+        <div class="ventas-lista">
+            <h3>Ventas del Día</h3>
+            <div class="filtros">
+                <input type="date" id="fechaFiltro">
+                <button onclick="cargarVentas()" class="btn-primary">Filtrar</button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Items</th>
+                        <th>Vendedor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaVentas">
+                    <!-- Las ventas se cargarán aquí -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal para Anular Venta -->
+        <div id="modalAnular" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>Anular Venta</h3>
+                <p>¿Está seguro de que desea anular esta venta?</p>
+                <form id="formAnular">
+                    <input type="hidden" id="ventaIdAnular">
+                    <div class="form-group">
+                        <label for="motivoAnular">Motivo:</label>
+                        <textarea id="motivoAnular" required placeholder="Ingrese el motivo de la anulación"></textarea>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="button" onclick="cerrarModal()" class="btn-secondary">Cancelar</button>
+                        <button type="submit" class="btn-danger">Anular Venta</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.ventas-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.item-venta {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.item-venta:hover {
+    background: #e9ecef;
+}
+
+.producto-select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.cantidad {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 80px;
+    text-align: center;
+}
+
+.precio-unitario, .subtotal {
+    font-weight: bold;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    text-align: center;
+    min-width: 80px;
+}
+
+.precio-unitario {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.subtotal {
+    color: #27ae60;
+    font-size: 1rem;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.resumen-venta {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    border-left: 4px solid #3498db;
+}
+
+.resumen-detalle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.resumen-detalle div {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+#totalVenta {
+    color: #27ae60;
+    font-size: 1.3rem;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.filtros {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.filtros input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.stock-info {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-top: 0.25rem;
+}
+
+.stock-bajo {
+    color: #e74c3c;
+    font-weight: bold;
+}
+</style>
+
+<script>
+let productos = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (usuario && sessionId) {
+        document.getElementById('contenidoVentas').style.display = 'block';
+        inicializarFechas();
+        cargarDatosIniciales();
+    }
+});
+
+function inicializarFechas() {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaFiltro').value = hoy;
+}
+
+async function cargarDatosIniciales() {
+    await cargarProductos();
+    await cargarVentas();
+}
+
+async function cargarProductos() {
+    try {
+        const response = await fetch('/api/productos', {
+            headers: { 'session-id': sessionId }
+        });
+        
+        if (response.ok) {
+            productos = await response.json();
+            actualizarSelectProductos();
+        } else {
+            console.error('Error cargando productos');
+        }
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+    }
+}
+
+function actualizarSelectProductos() {
+    const selects = document.querySelectorAll('.producto-select');
+    selects.forEach(select => {
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Seleccionar producto</option>';
+        productos.forEach(producto => {
+            const option = document.createElement('option');
+            option.value = producto.id;
+            
+            let stockInfo = '';
+            if (producto.stock_actual <= 0) {
+                stockInfo = ' - SIN STOCK';
+                option.disabled = true;
+            } else if (producto.stock_actual <= 5) {
+                stockInfo = ` - Stock bajo (${producto.stock_actual})`;
+            } else {
+                stockInfo = ` - Stock: ${producto.stock_actual}`;
+            }
+            
+            option.textContent = `${producto.nombre} - $${producto.precio_venta}${stockInfo}`;
+            option.dataset.precio = producto.precio_venta;
+            option.dataset.stock = producto.stock_actual;
+            select.appendChild(option);
+        });
+        if (currentValue) select.value = currentValue;
+    });
+    calcularTotal();
+}
+
+function agregarItem() {
+    const container = document.getElementById('itemsVenta');
+    const newItem = document.createElement('div');
+    newItem.className = 'item-venta';
+    newItem.innerHTML = `
+        <select class="producto-select" required onchange="actualizarPrecio(this)">
+            <option value="">Seleccionar producto</option>
+        </select>
+        <input type="number" class="cantidad" placeholder="Cantidad" min="1" value="1" required onchange="calcularItem(this)" oninput="calcularItem(this)">
+        <span class="precio-unitario">$0.00</span>
+        <span class="subtotal">$0.00</span>
+        <button type="button" onclick="eliminarItem(this)" class="btn-danger">✕</button>
+    `;
+    container.appendChild(newItem);
+    actualizarSelectProductos();
+}
+
+function eliminarItem(button) {
+    if (document.querySelectorAll('.item-venta').length > 1) {
+        button.closest('.item-venta').remove();
+        calcularTotal();
+    }
+}
+
+function actualizarPrecio(select) {
+    const item = select.closest('.item-venta');
+    const precioUnitario = item.querySelector('.precio-unitario');
+    const precio = select.selectedOptions[0]?.dataset.precio || 0;
+    const stock = select.selectedOptions[0]?.dataset.stock || 0;
+    
+    precioUnitario.textContent = `$${parseFloat(precio).toFixed(2)}`;
+    
+    // Actualizar cantidad máxima según stock
+    const cantidadInput = item.querySelector('.cantidad');
+    cantidadInput.max = stock;
+    
+    if (parseInt(cantidadInput.value) > stock) {
+        cantidadInput.value = stock;
+    }
+    
+    calcularItem(cantidadInput);
+}
+
+function calcularItem(inputElement) {
+    const item = inputElement.closest('.item-venta');
+    const cantidad = parseInt(inputElement.value) || 0;
+    const precio = item.querySelector('.producto-select').selectedOptions[0]?.dataset.precio || 0;
+    const subtotal = cantidad * precio;
+    
+    item.querySelector('.subtotal').textContent = `$${subtotal.toFixed(2)}`;
+    calcularTotal();
+}
+
+function calcularTotal() {
+    let subtotal = 0;
+    document.querySelectorAll('.item-venta').forEach(item => {
+        const cantidad = item.querySelector('.cantidad').value || 0;
+        const precio = item.querySelector('.producto-select').selectedOptions[0]?.dataset.precio || 0;
+        const itemSubtotal = cantidad * precio;
+        subtotal += itemSubtotal;
+    });
+    
+    document.getElementById('subtotalVenta').textContent = subtotal.toFixed(2);
+    document.getElementById('totalVenta').textContent = subtotal.toFixed(2);
+}
+
+document.getElementById('formVenta').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const items = [];
+    let error = false;
+    
+    document.querySelectorAll('.item-venta').forEach(item => {
+        const productoSelect = item.querySelector('.producto-select');
+        const productoId = productoSelect.value;
+        const cantidad = parseInt(item.querySelector('.cantidad').value);
+        const producto = productos.find(p => p.id == productoId);
+        
+        if (!productoId) {
+            alert('Todos los productos deben ser seleccionados');
+            error = true;
+            return;
+        }
+        
+        if (!cantidad || cantidad < 1) {
+            alert('Todas las cantidades deben ser mayores a 0');
+            error = true;
+            return;
+        }
+        
+        if (producto && cantidad > producto.stock_actual) {
+            alert(`Stock insuficiente para ${producto.nombre}. Stock disponible: ${producto.stock_actual}`);
+            error = true;
+            return;
+        }
+        
+        items.push({
+            producto_id: parseInt(productoId),
+            cantidad: cantidad
+        });
+    });
+    
+    if (error) return;
+    
+    if (items.length === 0) {
+        alert('Agregue al menos un producto a la venta');
+        return;
+    }
+    
+    // Solo una sucursal - ID 1
+    const datosVenta = {
+        sucursal_id: 1,
+        items: items
+    };
+    
+    const resultado = await registrarVenta(datosVenta);
+    if (resultado) {
+        // Limpiar formulario
+        document.getElementById('formVenta').reset();
+        document.getElementById('itemsVenta').innerHTML = `
+            <div class="item-venta">
+                <select class="producto-select" required onchange="actualizarPrecio(this)">
+                    <option value="">Seleccionar producto</option>
+                </select>
+                <input type="number" class="cantidad" placeholder="Cantidad" min="1" value="1" required onchange="calcularItem(this)" oninput="calcularItem(this)">
+                <span class="precio-unitario">$0.00</span>
+                <span class="subtotal">$0.00</span>
+                <button type="button" onclick="eliminarItem(this)" class="btn-danger">✕</button>
+            </div>
+        `;
+        await cargarProductos(); // Recargar productos para actualizar stock
+        actualizarSelectProductos();
+        calcularTotal();
+        await cargarVentas();
+    }
+});
+
+async function cargarVentas() {
+    try {
+        const fecha = document.getElementById('fechaFiltro').value;
+        const response = await fetch(`/api/ventas?fecha=${fecha}`, {
+            headers: { 'session-id': sessionId }
+        });
+        
+        let ventas = [];
+        if (response.ok) {
+            ventas = await response.json();
+        }
+        
+        const tabla = document.getElementById('tablaVentas');
+        tabla.innerHTML = '';
+        
+        ventas.forEach(venta => {
+            const fila = document.createElement('tr');
+            const itemsTexto = venta.items.map(item => 
+                `${item.cantidad}x ${item.producto.nombre} ($${item.precio_unitario})`
+            ).join(', ');
+            
+            fila.innerHTML = `
+                <td>${venta.id}</td>
+                <td>${new Date(venta.fecha_venta).toLocaleString()}</td>
+                <td>$${venta.total.toFixed(2)}</td>
+                <td>${itemsTexto}</td>
+                <td>${venta.usuario?.nombre || 'N/A'}</td>
+                <td>
+                    ${usuario.rol === 'administradora' ? 
+                        `<button onclick="abrirModalAnular(${venta.id})" class="btn-danger">Anular</button>` : 
+                        '<span class="text-muted">Solo admin</span>'
+                    }
+                </td>
+            `;
+            tabla.appendChild(fila);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando ventas:', error);
+    }
+}
+
+function abrirModalAnular(ventaId) {
+    document.getElementById('ventaIdAnular').value = ventaId;
+    document.getElementById('modalAnular').style.display = 'flex';
+}
+
+function cerrarModal() {
+    document.getElementById('modalAnular').style.display = 'none';
+    document.getElementById('formAnular').reset();
+}
+
+document.getElementById('formAnular').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const ventaId = document.getElementById('ventaIdAnular').value;
+    const motivo = document.getElementById('motivoAnular').value;
+    
+    try {
+        const response = await fetch(`/api/ventas/${ventaId}/anular`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'session-id': sessionId
+            },
+            body: JSON.stringify({ motivo })
+        });
+        
+        if (response.ok) {
+            mostrarMensaje('Venta anulada exitosamente', 'success');
+            cerrarModal();
+            await cargarVentas();
+            await cargarProductos();
+        } else {
+            const error = await response.json();
+            mostrarMensaje(error.detail || 'Error anulando venta', 'error');
+        }
+    } catch (error) {
+        mostrarMensaje('Error de conexión', 'error');
+    }
+});
+
+// Función global para registrar venta
+async function registrarVenta(datosVenta) {
+    try {
+        const response = await fetch('/api/ventas', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'session-id': sessionId
+            },
+            body: JSON.stringify(datosVenta)
+        });
+        
+        if (response.ok) {
+            const resultado = await response.json();
+            mostrarMensaje('Venta registrada exitosamente', 'success');
+            return resultado;
+        } else {
+            const error = await response.json();
+            mostrarMensaje(error.detail || 'Error registrando venta', 'error');
+            return null;
+        }
+    } catch (error) {
+        mostrarMensaje('Error de conexión', 'error');
+        return null;
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+Integrantes
+David Alexander Santisteban Apolinar
+Samuel Andres Bustos Mosquera
+Andres Julian Mendivelso Chaparro
+Daniel Alejandro Rojas Saavedra
+
+Instrucciones
+Instalar las dependencias de requirements.txt, 
+ejecutar el main.py  
+acceder en el navegador a la dirección que aparece en la consola (http://localhost:8001/)
+
+Usuarios
+Usuario -> admin@storevision.com
+Contraseña -> admin123
+
+Usuario -> cajero@storevision.com
+Contraseña -> cajero123

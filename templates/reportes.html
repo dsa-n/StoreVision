@@ -1,0 +1,829 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="reportes-container">
+    <h1>📊 Reportes y Análisis - StoreVision</h1>
+    
+    <div id="contenidoReportes" style="display: none;">
+        <!-- Filtros Generales -->
+        <div class="filtros-reportes">
+            <div class="filtro-group">
+                <label for="fechaInicio">Fecha Inicio:</label>
+                <input type="date" id="fechaInicio">
+            </div>
+            <div class="filtro-group">
+                <label for="fechaFin">Fecha Fin:</label>
+                <input type="date" id="fechaFin">
+            </div>
+            <button onclick="cargarReportes()" class="btn-primary">Generar Reportes</button>
+        </div>
+
+        <!-- Balance Económico -->
+        <div class="reporte-card">
+            <h3>💰 Balance Económico</h3>
+            <div id="balanceEconomico" class="reporte-content">
+                <div class="loading">Seleccione fechas y haga clic en "Generar Reportes"</div>
+            </div>
+        </div>
+
+        <!-- Indicadores de Ventas -->
+        <div class="reporte-card">
+            <h3>📈 Indicadores de Ventas</h3>
+            <div id="indicadoresVentas" class="reporte-content">
+                <div class="loading">Seleccione fechas y haga clic en "Generar Reportes"</div>
+            </div>
+        </div>
+
+        <!-- Productos Más Vendidos -->
+        <div class="reporte-card">
+            <h3>🏆 Productos Más Vendidos</h3>
+            <div id="topProductos" class="reporte-content">
+                <div class="loading">Seleccione fechas y haga clic en "Generar Reportes"</div>
+            </div>
+        </div>
+
+        <!-- Alertas de Negocio -->
+        <div class="reporte-card">
+            <h3>⚠️ Alertas del Negocio</h3>
+            <div id="alertasNegocio" class="reporte-content">
+                <div class="loading">Seleccione fechas y haga clic en "Generar Reportes"</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="accesoReportes" style="display: none; text-align: center; padding: 2rem;">
+        <h3>🔒 Acceso Restringido</h3>
+        <p>Los reportes están disponibles solo para administradores.</p>
+        <p>Contacte al administrador del sistema.</p>
+    </div>
+</div>
+
+<style>
+.reportes-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.filtros-reportes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.filtro-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filtro-group label {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.filtro-group input {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.reporte-card {
+    background: white;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.reporte-card h3 {
+    background: #34495e;
+    color: white;
+    margin: 0;
+    padding: 1.5rem;
+    font-size: 1.2rem;
+}
+
+.reporte-content {
+    padding: 1.5rem;
+}
+
+.metrica-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.metrica-card {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+    border-left: 4px solid #3498db;
+}
+
+.metrica-valor {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.metrica-label {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-top: 0.5rem;
+}
+
+.metrica-positiva {
+    border-left-color: #27ae60;
+}
+
+.metrica-negativa {
+    border-left-color: #e74c3c;
+}
+
+.tabla-reporte {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.tabla-reporte th,
+.tabla-reporte td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.tabla-reporte th {
+    background-color: #34495e;
+    color: white;
+    font-weight: 600;
+}
+
+.alerta-item {
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.alerta-critica {
+    background-color: #fdedec;
+    border-left-color: #e74c3c;
+    color: #c0392b;
+}
+
+.alerta-advertencia {
+    background-color: #fef9e7;
+    border-left-color: #f1c40f;
+    color: #7d6608;
+}
+
+.alerta-info {
+    background-color: #ebf5fb;
+    border-left-color: #3498db;
+    color: #2874a6;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.sin-datos {
+    text-align: center;
+    padding: 2rem;
+    color: #7f8c8d;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 2px dashed #dee2e6;
+}
+
+.sin-datos i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+
+.ranking-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: #34495e;
+    color: white;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.producto-ranking {
+    display: grid;
+    grid-template-columns: 40px 1fr 1fr 1fr;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.producto-ranking:hover {
+    background: #e9ecef;
+}
+
+.ranking-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.producto-detalle {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-top: 0.25rem;
+}
+
+.ranking-cantidad, .ranking-ingresos {
+    font-weight: bold;
+    text-align: center;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+}
+
+.ranking-cantidad {
+    color: #27ae60;
+    border: 1px solid #d5f4e6;
+}
+
+.ranking-ingresos {
+    color: #2980b9;
+    border: 1px solid #ebf5fb;
+}
+
+.ranking-posicion {
+    font-weight: bold;
+    color: #2c3e50;
+    text-align: center;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+}
+
+.resumen-productos {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #27ae60;
+}
+
+.resumen-productos div {
+    font-weight: bold;
+}
+
+
+.producto-ranking:nth-child(2) .ranking-posicion { background: #f1c40f; } 
+.producto-ranking:nth-child(3) .ranking-posicion { background: #95a5a6; } 
+.producto-ranking:nth-child(4) .ranking-posicion { background: #d35400; } 
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (usuario && sessionId) {
+        verificarPermisosReportes();
+        inicializarFechas();
+    }
+});
+
+function verificarPermisosReportes() {
+    // Solo administradora puede ver reportes
+    if (usuario.rol === 'administradora') {
+        document.getElementById('contenidoReportes').style.display = 'block';
+    } else {
+        document.getElementById('accesoReportes').style.display = 'block';
+    }
+}
+
+function inicializarFechas() {
+    const hoy = new Date();
+    const haceUnaSemana = new Date();
+    haceUnaSemana.setDate(haceUnaSemana.getDate() - 7);
+    
+    // Formatear fecha inicio (hace 7 días)
+    const haceUnaSemanaStr = haceUnaSemana.toISOString().split('T')[0];
+    
+    // Formatear fecha fin (hoy + 1 día)
+    const manana = new Date(hoy);
+    manana.setDate(manana.getDate() + 1);
+    const mananaStr = manana.toISOString().split('T')[0];
+    
+    document.getElementById('fechaInicio').value = haceUnaSemanaStr;
+    document.getElementById('fechaFin').value = mananaStr;
+}
+
+async function cargarReportes() {
+    console.log("🔄 Iniciando carga de reportes...");
+    
+    // Mostrar loading en todos los reportes
+    document.querySelectorAll('.reporte-content').forEach(content => {
+        content.innerHTML = '<div class="loading">Cargando datos...</div>';
+    });
+
+    try {
+        await Promise.all([
+            cargarBalanceEconomico(),
+            cargarIndicadoresVentas(),
+            cargarTopProductos(),
+            cargarAlertasNegocio()
+        ]);
+        console.log("✅ Todos los reportes cargados");
+    } catch (error) {
+        console.error("❌ Error cargando reportes:", error);
+    }
+}
+
+async function cargarBalanceEconomico() {
+    try {
+        const fechaInicio = document.getElementById('fechaInicio').value;
+        const fechaFin = document.getElementById('fechaFin').value;
+        
+        console.log("📊 Cargando balance con:", { fechaInicio, fechaFin });
+        
+        if (!fechaInicio || !fechaFin) {
+            mostrarBalanceEconomico({ error: "Seleccione fechas válidas" });
+            return;
+        }
+        
+        const url = `/api/reportes/balance?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        
+        console.log("URL balance:", url);
+        
+        const response = await fetch(url, {
+            headers: { 'session-id': sessionId }
+        });
+        
+        console.log("Respuesta balance:", response.status);
+        
+        let balance;
+        if (response.ok) {
+            balance = await response.json();
+            console.log("Datos balance:", balance);
+        } else {
+            balance = { error: "No se pudieron cargar los datos del balance" };
+        }
+        
+        mostrarBalanceEconomico(balance);
+        
+    } catch (error) {
+        console.error('Error cargando balance:', error);
+        mostrarBalanceEconomico({ error: "Error al cargar el balance económico" });
+    }
+}
+
+function mostrarBalanceEconomico(balance) {
+    const container = document.getElementById('balanceEconomico');
+    
+    if (balance.error) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>📊</i>
+                <h4>No hay datos disponibles</h4>
+                <p>${balance.error}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Verificar si hay ventas
+    const totalVentas = balance.resumen_ventas?.total_ventas || 0;
+    const cantidadVentas = balance.resumen_ventas?.cantidad_ventas || 0;
+    
+    if (totalVentas === 0 || cantidadVentas === 0) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>💰</i>
+                <h4>Sin actividad económica</h4>
+                <p>No se registraron ventas en el periodo seleccionado</p>
+                <small>Cuando realice ventas, aquí podrá ver el balance económico</small>
+            </div>
+        `;
+        return;
+    }
+    
+    const margenClase = balance.rentabilidad.margen_utilidad >= 20 ? 'metrica-positiva' : 
+                       balance.rentabilidad.margen_utilidad >= 10 ? '' : 'metrica-negativa';
+    
+    container.innerHTML = `
+        <div class="metrica-grid">
+            <div class="metrica-card">
+                <div class="metrica-valor">$${totalVentas.toLocaleString()}</div>
+                <div class="metrica-label">Ventas Totales</div>
+            </div>
+            <div class="metrica-card">
+                <div class="metrica-valor">${cantidadVentas}</div>
+                <div class="metrica-label">Transacciones</div>
+            </div>
+            <div class="metrica-card">
+                <div class="metrica-valor">$${balance.resumen_ventas.ticket_promedio.toFixed(2)}</div>
+                <div class="metrica-label">Ticket Promedio</div>
+            </div>
+            <div class="metrica-card ${margenClase}">
+                <div class="metrica-valor">${balance.rentabilidad.margen_utilidad.toFixed(1)}%</div>
+                <div class="metrica-label">Margen Utilidad</div>
+            </div>
+        </div>
+        
+        <table class="tabla-reporte">
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Monto</th>
+                    <th>Porcentaje</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Ventas Totales</td>
+                    <td>$${totalVentas.toFixed(2)}</td>
+                    <td>100%</td>
+                </tr>
+                <tr>
+                    <td>Costo de Ventas</td>
+                    <td>$${balance.rentabilidad.costo_ventas.toFixed(2)}</td>
+                    <td>${((balance.rentabilidad.costo_ventas / totalVentas) * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                    <td><strong>Utilidad Bruta</strong></td>
+                    <td><strong>$${balance.rentabilidad.utilidad_bruta.toFixed(2)}</strong></td>
+                    <td><strong>${balance.rentabilidad.margen_utilidad.toFixed(1)}%</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    `;
+}
+
+async function cargarIndicadoresVentas() {
+    try {
+        const fechaInicio = document.getElementById('fechaInicio').value;
+        const fechaFin = document.getElementById('fechaFin').value;
+        
+        if (!fechaInicio || !fechaFin) {
+            mostrarIndicadoresVentas({ error: "Seleccione fechas válidas" });
+            return;
+        }
+        
+        const response = await fetch(`/api/reportes/indicadores-ventas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`, {
+            headers: { 'session-id': sessionId }
+        });
+        
+        let indicadores;
+        if (response.ok) {
+            indicadores = await response.json();
+        } else {
+            indicadores = { error: "No se pudieron cargar los indicadores" };
+        }
+        
+        mostrarIndicadoresVentas(indicadores);
+        
+    } catch (error) {
+        console.error('Error cargando indicadores:', error);
+        mostrarIndicadoresVentas({ error: "Error al cargar los indicadores" });
+    }
+}
+
+function mostrarIndicadoresVentas(indicadores) {
+    const container = document.getElementById('indicadoresVentas');
+    
+    if (indicadores.error) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>📈</i>
+                <h4>No hay datos de ventas</h4>
+                <p>${indicadores.error}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const periodoActual = indicadores.comparativa?.periodo_actual || 0;
+    const periodoAnterior = indicadores.comparativa?.periodo_anterior || 0;
+    
+    if (periodoActual === 0 && periodoAnterior === 0) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>📊</i>
+                <h4>Sin datos comparativos</h4>
+                <p>No hay suficientes datos de ventas para comparar periodos</p>
+                <small>Realice ventas en diferentes periodos para ver indicadores comparativos</small>
+            </div>
+        `;
+        return;
+    }
+    
+    const variacion = indicadores.comparativa?.variacion_porcentaje || 0;
+    const variacionClase = variacion >= 0 ? 'metrica-positiva' : 'metrica-negativa';
+    const tendenciaIcono = variacion >= 0 ? '📈' : '📉';
+    
+    container.innerHTML = `
+        <div class="metrica-grid">
+            <div class="metrica-card">
+                <div class="metrica-valor">$${periodoActual.toLocaleString()}</div>
+                <div class="metrica-label">Ventas Periodo Actual</div>
+            </div>
+            <div class="metrica-card">
+                <div class="metrica-valor">$${periodoAnterior.toLocaleString()}</div>
+                <div class="metrica-label">Ventas Periodo Anterior</div>
+            </div>
+            <div class="metrica-card ${variacionClase}">
+                <div class="metrica-valor">${tendenciaIcono} ${Math.abs(variacion).toFixed(1)}%</div>
+                <div class="metrica-label">Variación</div>
+            </div>
+        </div>
+        
+        ${indicadores.comparativa?.alerta_caida ? `
+            <div class="alerta-item alerta-critica">
+                <strong>⚠️ Alerta de Caída de Ventas</strong><br>
+                Las ventas han disminuido un ${Math.abs(variacion).toFixed(1)}% 
+                respecto al periodo anterior
+            </div>
+        ` : ''}
+        
+        ${variacion > 0 ? `
+            <div class="alerta-item alerta-info">
+                <strong>✅ Crecimiento Positivo</strong><br>
+                Las ventas han aumentado un ${variacion.toFixed(1)}% respecto al periodo anterior
+            </div>
+        ` : ''}
+    `;
+}
+
+async function cargarTopProductos() {
+    try {
+        const fechaInicio = document.getElementById('fechaInicio').value;
+        const fechaFin = document.getElementById('fechaFin').value;
+        
+        console.log("🏆 Cargando productos más vendidos con:", { fechaInicio, fechaFin });
+        
+        if (!fechaInicio || !fechaFin) {
+            mostrarTopProductos({ error: "Seleccione fechas válidas" });
+            return;
+        }
+        
+        const response = await fetch(`/api/reportes/productos-mas-vendidos?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`, {
+            headers: { 'session-id': sessionId }
+        });
+        
+        console.log("📡 Respuesta productos:", response.status, response.statusText);
+        
+        let productos;
+        if (response.ok) {
+            productos = await response.json();
+            console.log("✅ Datos productos recibidos:", productos);
+        } else {
+            const errorText = await response.text();
+            console.error("❌ Error productos:", errorText);
+            productos = { error: `Error ${response.status}: ${errorText}` };
+        }
+        
+        mostrarTopProductos(productos);
+        
+    } catch (error) {
+        console.error('💥 Error cargando top productos:', error);
+        mostrarTopProductos({ error: `Error de conexión: ${error.message}` });
+    }
+}
+
+function mostrarTopProductos(productos) {
+    const container = document.getElementById('topProductos');
+    
+    if (productos.error) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>🏆</i>
+                <h4>No hay datos de productos</h4>
+                <p>${productos.error}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    if (!productos || productos.length === 0) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>📦</i>
+                <h4>Sin ventas registradas</h4>
+                <p>No hay productos vendidos en el periodo seleccionado</p>
+                <small>Cuando realice ventas, aquí aparecerán los productos más populares</small>
+            </div>
+        `;
+        return;
+    }
+    
+    // Filtrar productos que realmente tengan ventas
+    const productosConVentas = productos.filter(prod => (prod.total_vendido || 0) > 0);
+    
+    if (productosConVentas.length === 0) {
+        container.innerHTML = `
+            <div class="sin-datos">
+                <i>📊</i>
+                <h4>Sin productos vendidos</h4>
+                <p>No hay productos con ventas en el periodo seleccionado</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="productos-ranking">
+            <div class="ranking-header">
+                <span>#</span>
+                <span>Producto</span>
+                <span>Unidades Vendidas</span>
+                <span>Total Ingresos</span>
+            </div>
+    `;
+    
+    productosConVentas.slice(0, 10).forEach((prod, index) => {
+        const totalVendido = prod.total_vendido || 0;
+        const totalIngresos = prod.total_ingresos || 0;
+        
+        html += `
+            <div class="producto-ranking">
+                <div class="ranking-posicion">${index + 1}</div>
+                <div class="ranking-info">
+                    <strong>${prod.nombre}</strong>
+                    <div class="producto-detalle">
+                        <small>Código: ${prod.codigo} | Categoría: ${prod.categoria}</small>
+                    </div>
+                </div>
+                <div class="ranking-cantidad">
+                    ${totalVendido} unidades
+                </div>
+                <div class="ranking-ingresos">
+                    $${totalIngresos.toFixed(2)}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `</div>`;
+    
+    // Resumen total
+    const totalUnidades = productosConVentas.reduce((sum, prod) => sum + (prod.total_vendido || 0), 0);
+    const totalIngresos = productosConVentas.reduce((sum, prod) => sum + (prod.total_ingresos || 0), 0);
+    
+    html += `
+        <div class="resumen-productos">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <strong>Total Unidades Vendidas:</strong> ${totalUnidades}
+                </div>
+                <div>
+                    <strong>Total Ingresos:</strong> $${totalIngresos.toFixed(2)}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+async function cargarAlertasNegocio() {
+    try {
+        // Cargar alertas de inventario
+        const responseAlertas = await fetch('/api/inventario/alertas', {
+            headers: { 'session-id': sessionId }
+        });
+        
+        let alertasInventario = [];
+        if (responseAlertas.ok) {
+            alertasInventario = await responseAlertas.json();
+        }
+        
+        // Cargar indicadores para alertas de ventas
+        const fechaInicio = document.getElementById('fechaInicio').value;
+        const fechaFin = document.getElementById('fechaFin').value;
+        let indicadores = {};
+        
+        if (fechaInicio && fechaFin) {
+            const responseIndicadores = await fetch(`/api/reportes/indicadores-ventas?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`, {
+                headers: { 'session-id': sessionId }
+            });
+            
+            if (responseIndicadores.ok) {
+                indicadores = await responseIndicadores.json();
+            }
+        }
+        
+        mostrarAlertasNegocio(alertasInventario, indicadores);
+        
+    } catch (error) {
+        console.error('Error cargando alertas:', error);
+        mostrarAlertasNegocio([], {});
+    }
+}
+
+function mostrarAlertasNegocio(alertasInventario, indicadores) {
+    const container = document.getElementById('alertasNegocio');
+    
+    let alertasHTML = '';
+    
+    // Alertas de inventario bajo
+    if (alertasInventario && alertasInventario.length > 0) {
+        alertasHTML += `
+            <div class="alerta-item alerta-advertencia">
+                <strong>📦 Alertas de Inventario Bajo</strong><br>
+                ${alertasInventario.length} producto(s) con stock por debajo del mínimo
+            </div>
+        `;
+    } else {
+        alertasHTML += `
+            <div class="alerta-item alerta-info">
+                ✅ No hay alertas de inventario crítico
+            </div>
+        `;
+    }
+    
+    // Alertas de ventas - solo mostrar si hay datos
+    const periodoActual = indicadores.comparativa?.periodo_actual || 0;
+    const periodoAnterior = indicadores.comparativa?.periodo_anterior || 0;
+    
+    if (periodoActual > 0 || periodoAnterior > 0) {
+        if (indicadores.comparativa?.alerta_caida) {
+            const variacion = Math.abs(indicadores.comparativa.variacion_porcentaje || 0);
+            alertasHTML += `
+                <div class="alerta-item alerta-critica">
+                    <strong>💰 Alerta de Ventas</strong><br>
+                    Las ventas han caído un ${variacion.toFixed(1)}% respecto al periodo anterior
+                </div>
+            `;
+        } else if (indicadores.comparativa?.variacion_porcentaje > 0) {
+            alertasHTML += `
+                <div class="alerta-item alerta-info">
+                    ✅ Las ventas muestran crecimiento positivo
+                </div>
+            `;
+        } else {
+            alertasHTML += `
+                <div class="alerta-item alerta-info">
+                    ✅ Las ventas se mantienen estables
+                </div>
+            `;
+        }
+    } else {
+        alertasHTML += `
+            <div class="alerta-item">
+                <strong>📊 Sin datos de ventas</strong><br>
+                No hay suficientes ventas para analizar tendencias
+            </div>
+        `;
+    }
+    
+    // Estado general del negocio
+    const totalAlertasCriticas = (alertasInventario?.length || 0) + (indicadores.comparativa?.alerta_caida ? 1 : 0);
+    
+    if (totalAlertasCriticas === 0) {
+        alertasHTML += `
+            <div class="alerta-item" style="background-color: #d5f4e6; border-left-color: #27ae60; color: #1d8348;">
+                <strong>🎉 Estado Excelente</strong><br>
+                Todas las métricas del negocio están en niveles óptimos
+            </div>
+        `;
+    } else if (totalAlertasCriticas <= 2) {
+        alertasHTML += `
+            <div class="alerta-item alerta-advertencia">
+                <strong>⚠️ Atención Requerida</strong><br>
+                Existen ${totalAlertasCriticas} alerta(s) que requieren revisión
+            </div>
+        `;
+    } else {
+        alertasHTML += `
+            <div class="alerta-item alerta-critica">
+                <strong>🚨 Estado Crítico</strong><br>
+                Existen ${totalAlertasCriticas} alertas críticas que requieren atención inmediata
+            </div>
+        `;
+    }
+    
+    container.innerHTML = alertasHTML;
+}
+</script>
+{% endblock %}
